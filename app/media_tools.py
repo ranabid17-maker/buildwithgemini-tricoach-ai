@@ -6,7 +6,7 @@ from google.cloud import storage
 from google.genai import types
 from google.adk.tools import ToolContext
 
-BUCKET_NAME = "simple-agent-media-11b4cbda191e"
+BUCKET_NAME = "tricoach-ai-media-11b4cbda191e"
 PROJECT_ID = "qwiklabs-gcp-01-11b4cbda191e"
 
 
@@ -63,7 +63,7 @@ async def generate_workout_video(prompt_description: str, tool_context: ToolCont
         tool_context: ADK ToolContext used to save the generated video artifact in Playground.
 
     Returns:
-        The public HTTPS Cloud Storage URL of the generated video (https://storage.googleapis.com/simple-agent-media-11b4cbda191e/<object>).
+        The public HTTPS Cloud Storage URL of the generated video (https://storage.googleapis.com/tricoach-ai-media-11b4cbda191e/<object>).
     """
     try:
         # 1. Initialize Vertex AI client for global region using gemini-omni-flash-preview

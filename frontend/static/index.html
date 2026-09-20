@@ -3,73 +3,244 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agent</title>
-<!-- Optional: used only to draw A2UI Icon components. If it can't load (offline/
-     corp network), icons fall back to showing their name as text. -->
+<title>TriCoach AI</title>
+<!-- Optional: used only to draw A2UI Icon components. -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
 <style>
-  :root { --accent:#1a73e8; --bg:#f6f8fa; --border:#dfe3e8; }
-  * { box-sizing:border-box; }
-  body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); display:flex; flex-direction:column; height:100vh; }
-  header { background:var(--accent); color:#fff; padding:.9rem 1.2rem; font-weight:700; }
-  #log { flex:1; overflow-y:auto; padding:1.2rem; max-width:780px; width:100%; margin:0 auto; }
-  .msg { margin:.6rem 0; }
-  .msg.user { text-align:right; }
-  .bubble { display:inline-block; padding:.6rem .9rem; border-radius:12px; background:#fff; border:1px solid var(--border); text-align:left; max-width:90%; white-space:pre-wrap; }
-  .msg.user .bubble { background:var(--accent); color:#fff; border:none; }
-  /* When the reply is an A2UI card, drop the bubble chrome so the card stands alone. */
-  .bubble.rich { background:transparent; border:none; padding:0; max-width:100%; white-space:normal; }
-  form { display:flex; gap:.5rem; padding:1rem; border-top:1px solid var(--border); background:#fff; }
-  input { flex:1; padding:.7rem; border:1px solid var(--border); border-radius:8px; font-size:1rem; }
-  button { padding:.7rem 1.1rem; border:none; border-radius:8px; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; }
+  :root {
+    --accent: #e63946;
+    --accent-hover: #d62839;
+    --bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --header-bg: #e63946;
+    --header-text: #ffffff;
+    --border: #e2e8f0;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --msg-user-bg: #e63946;
+    --msg-user-text: #ffffff;
+    --msg-agent-bg: #ffffff;
+    --msg-agent-border: #cbd5e1;
+    --input-bg: #ffffff;
+    --shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.04);
+  }
 
-  /* --- A2UI component styles (Card, Column, Row, Text, Divider, List, Image, Icon) --- */
-  .a2card { border:1px solid var(--border); border-radius:12px; padding:1rem; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.06); max-width:100%; }
-  .a2card + .a2card, .a2col > .a2card { margin-top:.6rem; }
-  .a2col { display:flex; flex-direction:column; gap:.4rem; }
-  .a2row { display:flex; flex-direction:row; gap:.6rem; align-items:center; flex-wrap:wrap; }
-  .a2row.between { justify-content:space-between; }
-  .a2text { margin:0; line-height:1.4; }
-  .a2text.a2-h1 { font-size:1.5rem; font-weight:700; }
-  .a2text.a2-h2 { font-size:1.25rem; font-weight:700; }
-  .a2text.a2-h3 { font-size:1.1rem; font-weight:600; }
-  .a2text.a2-h4 { font-size:1rem; font-weight:600; }
-  .a2text.a2-caption { font-size:.85rem; color:#666; }
-  .a2divider { border:none; border-top:1px solid var(--border); margin:.4rem 0; width:100%; }
-  .a2img { max-width:100%; border-radius:8px; display:block; }
-  .material-symbols-outlined { font-family:'Material Symbols Outlined'; font-size:1.25rem; line-height:1; vertical-align:middle; color:var(--accent); }
+  [data-theme="dark"] {
+    --bg: #0d1117;
+    --card-bg: #161b22;
+    --header-bg: #161b22;
+    --header-text: #f0f6fc;
+    --border: #30363d;
+    --text-primary: #f0f6fc;
+    --text-secondary: #8b949e;
+    --msg-user-bg: #e63946;
+    --msg-user-text: #ffffff;
+    --msg-agent-bg: #161b22;
+    --msg-agent-border: #30363d;
+    --input-bg: #161b22;
+    --shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text-primary); display: flex; flex-direction: column; height: 100vh; transition: background 0.2s ease, color 0.2s ease; }
+  
+  /* --- Header --- */
+  header { background: var(--header-bg); color: var(--header-text); padding: 0.8rem 1.2rem; font-weight: 700; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
+  .header-brand { display: flex; align-items: center; gap: 0.5rem; letter-spacing: 0.5px; }
+  .header-actions { display: flex; gap: 0.5rem; }
+  .hdr-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 0.4rem 0.7rem; border-radius: 8px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
+  .hdr-btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
+
+  /* --- Log Container --- */
+  #log { flex: 1; overflow-y: auto; padding: 1.2rem; max-width: 820px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
+
+  /* --- Welcome Hero Card --- */
+  .welcome-hero { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; text-align: center; box-shadow: var(--shadow); margin-top: 1rem; }
+  .welcome-hero h2 { margin: 0 0 0.5rem 0; color: var(--accent); font-size: 1.4rem; }
+  .welcome-hero p { margin: 0 0 1.2rem 0; color: var(--text-secondary); font-size: 0.95rem; }
+  .capabilities-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.6rem; }
+  .cap-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.6rem; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+
+  /* --- Message Rows & Bubbles --- */
+  .msg { display: flex; gap: 0.7rem; align-items: flex-start; max-width: 88%; }
+  .msg.user { align-self: flex-end; flex-direction: row; }
+  .msg.agent { align-self: flex-start; }
+
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  .msg.user .avatar { background: var(--text-secondary); }
+
+  .bubble-wrapper { display: flex; flex-direction: column; gap: 0.2rem; }
+  .msg-header { display: flex; gap: 0.5rem; font-size: 0.75rem; color: var(--text-secondary); }
+  .msg.user .msg-header { justify-content: flex-end; }
+  .msg-sender { font-weight: 600; }
+
+  .bubble { padding: 0.75rem 1rem; border-radius: 14px; background: var(--msg-agent-bg); border: 1px solid var(--msg-agent-border); color: var(--text-primary); line-height: 1.5; white-space: pre-wrap; word-break: break-word; box-shadow: var(--shadow); }
+  .msg.user .bubble { background: var(--msg-user-bg); color: var(--msg-user-text); border: none; border-bottom-right-radius: 4px; }
+  .msg.agent .bubble { border-bottom-left-radius: 4px; }
+  .bubble.rich { background: transparent; border: none; padding: 0; box-shadow: none; white-space: normal; }
+
+  /* --- Typing Indicator --- */
+  .typing-dots { display: inline-flex; align-items: center; gap: 4px; padding: 0.4rem 0.2rem; }
+  .typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulseWave 1.2s infinite ease-in-out; }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulseWave {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* --- Suggestion Buttons --- */
+  .sug-container { display: flex; gap: 0.5rem; padding: 0.5rem 1.2rem; max-width: 820px; width: 100%; margin: 0 auto; flex-wrap: wrap; justify-content: center; }
+  .sug-btn { background: var(--card-bg); color: var(--accent); border: 1px solid var(--accent); border-radius: 18px; padding: 0.4rem 0.9rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .sug-btn:hover { background: var(--accent); color: #fff; transform: translateY(-1px); }
+
+  /* --- Form & Input --- */
+  form { display: flex; gap: 0.6rem; padding: 1rem 1.2rem; border-top: 1px solid var(--border); background: var(--card-bg); max-width: 820px; width: 100%; margin: 0 auto; border-radius: 12px 12px 0 0; box-shadow: var(--shadow); }
+  input { flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 10px; font-size: 1rem; background: var(--input-bg); color: var(--text-primary); outline: none; transition: border-color 0.2s; }
+  input:focus { border-color: var(--accent); }
+  button.send-btn { padding: 0.75rem 1.3rem; border: none; border-radius: 10px; background: var(--accent); color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s ease; }
+  button.send-btn:hover { background: var(--accent-hover); }
+
+  /* --- A2UI Component Styles --- */
+  .a2card { border: 1px solid var(--border); border-radius: 14px; padding: 1rem; background: var(--card-bg); color: var(--text-primary); box-shadow: var(--shadow); max-width: 100%; }
+  .a2card + .a2card, .a2col > .a2card { margin-top: 0.6rem; }
+  .a2col { display: flex; flex-direction: column; gap: 0.5rem; }
+  .a2row { display: flex; flex-direction: row; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+  .a2row.between { justify-content: space-between; }
+  .a2text { margin: 0; line-height: 1.4; color: var(--text-primary); }
+  .a2text.a2-h1 { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+  .a2text.a2-h2 { font-size: 1.25rem; font-weight: 700; }
+  .a2text.a2-h3 { font-size: 1.1rem; font-weight: 600; }
+  .a2text.a2-h4 { font-size: 1rem; font-weight: 600; }
+  .a2text.a2-caption { font-size: 0.85rem; color: var(--text-secondary); }
+  .a2divider { border: none; border-top: 1px solid var(--border); margin: 0.5rem 0; width: 100%; }
+  .a2img { max-width: 100%; border-radius: 10px; display: block; }
+  .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-size: 1.25rem; line-height: 1; vertical-align: middle; color: var(--accent); }
 </style>
 </head>
 <body>
-<header>Your Agent</header>
-<div id="log"></div>
+
+<header>
+  <div class="header-brand">🏃‍♂️ TriCoach AI</div>
+  <div class="header-actions">
+    <button type="button" class="hdr-btn" id="themeToggle" title="Toggle Theme">🌙</button>
+    <button type="button" class="hdr-btn" id="clearChat" title="Clear Chat History">🗑️ Clear</button>
+  </div>
+</header>
+
+<div id="log">
+  <div id="welcomeHero" class="welcome-hero">
+    <h2>Welcome to TriCoach AI! ⚡</h2>
+    <p>Your AI-powered workout coach, herbal recovery advisor, and gym locator. Try an example prompt below or type your question:</p>
+    <div class="capabilities-grid">
+      <div class="cap-card">💪 <span>1RM & Calories</span></div>
+      <div class="cap-card">📍 <span>Nearby Gyms</span></div>
+      <div class="cap-card">🌿 <span>Herbal Remedies</span></div>
+      <div class="cap-card">🎬 <span>Workout Videos</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="sug-container">
+  <button type="button" class="sug-btn" onclick="sendPrompt('Calculate my 1RM for 185 lbs bench press for 6 reps')">💪 1RM Benchmark</button>
+  <button type="button" class="sug-btn" onclick="sendPrompt('Find nearby gyms in New York City')">📍 Nearby Gyms</button>
+  <button type="button" class="sug-btn" onclick="sendPrompt('Consult Culpeper herbal remedies for muscle recovery')">🌿 Herbal Remedies</button>
+</div>
+
 <form id="form">
   <input id="input" placeholder="Ask something…" autocomplete="off" autofocus>
-  <button>Send</button>
+  <button class="send-btn">Send</button>
 </form>
 
 <script>
 const log = document.getElementById("log");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
+const welcomeHero = document.getElementById("welcomeHero");
+const themeToggle = document.getElementById("themeToggle");
+const clearChat = document.getElementById("clearChat");
 
-function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+// Theme Toggle State
+let currentTheme = localStorage.getItem("theme") || "light";
+if (currentTheme === "dark") {
+  document.documentElement.setAttribute("data-theme", "dark");
+  themeToggle.textContent = "☀️";
+}
+
+themeToggle.addEventListener("click", () => {
+  if (document.documentElement.getAttribute("data-theme") === "dark") {
+    document.documentElement.removeAttribute("data-theme");
+    localStorage.setItem("theme", "light");
+    themeToggle.textContent = "🌙";
+  } else {
+    document.documentElement.setAttribute("data-theme", "dark");
+    localStorage.setItem("theme", "dark");
+    themeToggle.textContent = "☀️";
+  }
+});
+
+// Clear Chat Handler
+clearChat.addEventListener("click", () => {
+  log.innerHTML = "";
+  if (welcomeHero) {
+    welcomeHero.style.display = "block";
+    log.appendChild(welcomeHero);
+  }
+});
+
+function sendPrompt(txt) {
+  input.value = txt;
+  form.dispatchEvent(new Event("submit"));
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
 
 function bubble(who) {
+  if (welcomeHero && welcomeHero.style.display !== "none") {
+    welcomeHero.style.display = "none";
+  }
   const m = el("div", "msg " + who);
+  const avatar = el("div", "avatar", who === "user" ? "👤" : "🤖");
+  const wrapper = el("div", "bubble-wrapper");
+  
+  const headerRow = el("div", "msg-header");
+  headerRow.appendChild(el("span", "msg-sender", who === "user" ? "You" : "TriCoach AI"));
+  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  headerRow.appendChild(el("span", "msg-time", now));
+  
   const b = el("div", "bubble");
-  m.appendChild(b); log.appendChild(m); log.scrollTop = log.scrollHeight;
+  wrapper.appendChild(headerRow);
+  wrapper.appendChild(b);
+  
+  if (who === "user") {
+    m.appendChild(wrapper);
+    m.appendChild(avatar);
+  } else {
+    m.appendChild(avatar);
+    m.appendChild(wrapper);
+  }
+  
+  log.appendChild(m);
+  log.scrollTop = log.scrollHeight;
   return b;
+}
+
+function createTypingIndicator() {
+  const dots = el("div", "typing-dots");
+  dots.appendChild(el("span"));
+  dots.appendChild(el("span"));
+  dots.appendChild(el("span"));
+  return dots;
 }
 
 /* ----------------------------------------------------------------------------
  * A2UI mini-renderer (v0.8 Basic Catalog subset).
- * Renders Card / Column / Row / Text / Divider / List / Image / Icon.
- * Anything else falls back to plain text (see renderReply). All text goes in via
- * textContent and image URLs are validated, so agent output can't inject HTML.
  * -------------------------------------------------------------------------- */
-
-// A "bound value" is usually {literalString: "..."}; we only support literals.
 function boundStr(v) {
   if (v == null) return "";
   if (typeof v === "string") return v;
@@ -77,7 +248,6 @@ function boundStr(v) {
   return "";
 }
 
-// child ids of a component's props: single `child` and/or `children.explicitList`.
 function childIds(props) {
   const ids = [];
   if (props && typeof props.child === "string") ids.push(props.child);
@@ -86,11 +256,10 @@ function childIds(props) {
   return ids;
 }
 
-// A2UI icon names are camelCase (locationOn); Material Symbols wants snake_case.
 function iconName(n) { return String(n || "").replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/\s+/g, "_").toLowerCase(); }
 
 function buildNode(id, comps, seen) {
-  if (!id || seen.has(id)) return null;   // missing / cycle guard
+  if (!id || seen.has(id)) return null;
   seen.add(id);
   const spec = comps[id];
   if (!spec || typeof spec !== "object") return null;
@@ -123,19 +292,17 @@ function buildNode(id, comps, seen) {
       return el("hr", "a2divider");
     case "Image": {
       const src = boundStr(props.url || props.src);
-      if (!/^https?:\/\//i.test(src)) return null;   // only allow safe URLs
+      if (!/^https?:\/\//i.test(src)) return null;
       const img = el("img", "a2img"); img.src = src; img.alt = boundStr(props.alt) || ""; return img;
     }
     case "Icon": {
       const s = el("span", "material-symbols-outlined"); s.textContent = iconName(boundStr(props.name) || props.name); return s;
     }
     default:
-      return null;   // unknown component -> skipped (text fallback covers content)
+      return null;
   }
 }
 
-// Render one or more A2UI messages (beginRendering + surfaceUpdate) into `container`.
-// Returns true if anything was drawn.
 function renderSurface(messages, container) {
   const comps = {};
   const roots = [];
@@ -145,7 +312,7 @@ function renderSurface(messages, container) {
     if (su && Array.isArray(su.components)) for (const c of su.components) if (c && c.id && c.component) comps[c.id] = c.component;
   }
   let rootIds = roots.filter(r => comps[r]);
-  if (rootIds.length === 0) {   // no valid root given -> infer un-referenced components
+  if (rootIds.length === 0) {
     const referenced = new Set();
     for (const id in comps) { const spec = comps[id]; childIds(spec[Object.keys(spec)[0]] || {}).forEach(c => referenced.add(c)); }
     rootIds = Object.keys(comps).filter(id => !referenced.has(id));
@@ -155,7 +322,6 @@ function renderSurface(messages, container) {
   return drew;
 }
 
-// Fallback: pull every Text value out of the messages as plain text.
 function flattenText(messages) {
   const out = [];
   for (const m of messages) {
@@ -166,7 +332,7 @@ function flattenText(messages) {
 }
 
 function renderReply(b, parts) {
-  b.textContent = "";   // clear the "…" placeholder
+  b.textContent = "";
   const texts = parts.filter(p => p && (p.kind === "text" || (!p.kind && p.text))).map(p => p.text || "");
   const a2ui = parts.filter(p => p && p.kind === "a2ui" && p.data).map(p => p.data);
 
@@ -181,19 +347,17 @@ function renderReply(b, parts) {
   log.scrollTop = log.scrollHeight;
 }
 
-// The proxy returns { parts: [{kind:"text",text} | {kind:"a2ui",data}] }.
 form.addEventListener("submit", async (ev) => {
   ev.preventDefault();
   const text = input.value.trim();
   if (!text) return;
   bubble("user").textContent = text;
   input.value = "";
-  const b = bubble("agent"); b.textContent = "…";
+  const b = bubble("agent");
+  b.appendChild(createTypingIndicator());
+  
   try {
     const res = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text }) });
-    // Read as text first, then parse. If the proxy ever returns a non-JSON error
-    // page (e.g. a plain "Internal Server Error"), show that body instead of a
-    // cryptic "Unexpected token" JSON error.
     const raw = await res.text();
     let data;
     try { data = JSON.parse(raw); }
